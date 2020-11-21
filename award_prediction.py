@@ -66,6 +66,7 @@ df_player_trad.loc[df_player_trad["Award_next_year"]!= 0, "Award_next_year"] = 1
 df_player_trad.drop_duplicates(inplace=True)
 
 
+
 #============================================
 
 #First, we combine rows where players are traded to different teams mid-season.
@@ -130,19 +131,24 @@ df_player_trad.fillna(0,inplace=True)
 
 
 
-
+#=============================================
 #What do we drop? Where do we normalize? For logistic regression, is it not necessary to normalize?
 
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
-from sklearn.preprocessing import normalize
+from sklearn.preprocessing import normalize, StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_validate
 
+scaler = StandardScaler()
+
 LR = LogisticRegression()
 
-X = df_player_trad[["Age", "MPG", "PTS/G", "RB/G", "AST/G", "STL/G", "BLK/G", "BLK/G", "PF/G"]]
+Trad_stat = ["Age", "MPG", "PTS/G", "RB/G", "AST/G", "STL/G", "BLK/G", "BLK/G", "PF/G"]
+X = df_player_trad[Trad_stat]
+scaler.fit(X)
+X = scaler.transform(X)
 y = df_player_trad["Award"]
 y = y.astype('int')
 
@@ -150,11 +156,22 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.10, random
 
 
 LR.fit(X_train,y_train)
-print("LR test for current year prediction based on per-game stat is",LR.score(X_test, y_test))
 
+coef = LR.coef_
+coef = coef[0]
+ind = sorted(range(len(coef)), key = lambda k: abs(coef[k]), reverse=True)
+
+
+imp_list = [Trad_stat[i] for i in ind]
+
+print("LR test for current year prediction based on per-game stat is",LR.score(X_test, y_test))
+print("The importance of coefficients are,", ', '.join(imp_list))
 
 LR2 = LogisticRegression()
-X2 = df_player_trad[["Age", "MPG", "PTS/36", "RB/36", "AST/36", "STL/36", "BLK/36", "BLK/36", "PF/36"]]
+Trad_stat_36 = ["Age", "MPG", "PTS/36", "RB/36", "AST/36", "STL/36", "BLK/36", "BLK/36", "PF/36"]
+X2 = df_player_trad[Trad_stat_36]
+scaler.fit(X2)
+X2 = scaler.transform(X2)
 y2 = df_player_trad["Award"]
 y2 = y2.astype('int')
 
@@ -162,12 +179,22 @@ y2 = y2.astype('int')
 X_train, X_test, y_train, y_test = train_test_split(X2, y2, test_size=0.10, random_state=42)
 
 LR2.fit(X_train,y_train)
-print("LR test for current year prediction based on per-36 stat is",LR2.score(X_test, y_test))
 
+coef = LR2.coef_
+coef = coef[0]
+ind = sorted(range(len(coef)), key = lambda k: abs(coef[k]), reverse=True)
+
+
+imp_list = [Trad_stat_36[i] for i in ind]
+
+print("LR test for current year prediction based on per-36 stat is",LR2.score(X_test, y_test))
+print("The importance of coefficients are,", ', '.join(imp_list))
 
 LR3 = LogisticRegression()
 
-X3 = df_player_trad[["Age", "MPG", "PTS/G", "RB/G", "AST/G", "STL/G", "BLK/G", "BLK/G", "PF/G"]]
+X3 = df_player_trad[Trad_stat]
+scaler.fit(X3)
+X3 = scaler.transform(X3)
 y3 = df_player_trad["Award_next_year"]
 y3 = y3.astype('int')
 
@@ -175,15 +202,36 @@ X_train, X_test, y_train, y_test = train_test_split(X3, y3, test_size=0.10, rand
 
 
 LR3.fit(X_train,y_train)
-print("LR test for next year prediction based on per-game stat is",LR3.score(X_test, y_test))
 
+coef = LR3.coef_
+coef = coef[0]
+ind = sorted(range(len(coef)), key = lambda k: abs(coef[k]), reverse=True)
+
+
+imp_list = [Trad_stat[i] for i in ind]
+
+
+print("LR test for next year prediction based on per-game stat is",LR3.score(X_test, y_test))
+print("The importance of coefficients are,", ', '.join(imp_list))
 
 LR4 = LogisticRegression()
-X4 = df_player_trad[["Age", "MPG", "PTS/36", "RB/36", "AST/36", "STL/36", "BLK/36", "BLK/36", "PF/36"]]
+X4 = df_player_trad[Trad_stat_36]
+scaler.fit(X4)
+X4 = scaler.transform(X4)
 y4 = df_player_trad["Award_next_year"]
 y4 = y4.astype('int')
 
 X_train, X_test, y_train, y_test = train_test_split(X4, y4, test_size=0.10, random_state=42)
 
 LR4.fit(X_train,y_train)
+
+coef = LR4.coef_
+coef = coef[0]
+ind = sorted(range(len(coef)), key = lambda k: abs(coef[k]), reverse=True)
+
+
+imp_list = [Trad_stat_36[i] for i in ind]
+
+
 print("LR test for next year prediction based on per-36 stat is",LR4.score(X_test, y_test))
+print("The importance of coefficients are,", ', '.join(imp_list))
