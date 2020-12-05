@@ -68,16 +68,12 @@ df_player_adv = DF_stat_preprocess(df_player_adv)
 #For players traded mid-season, I suppose it makes sense to NOT combine their stats. It can be argued that the player has similar impact as the star under certain circumstances.
 
 
-
-
-
-
-#============================================
-
 #For traditional stats, we look at per-36. For advanced, we should not look at total winshare. Also, we can drop box plus-minus because it is described by OBPM + DBPM.
 
-df_player_adv.drop(columns = ['WS', 'BPM'], inplace = True)
+df_player_adv.drop(columns = ['WS', 'BPM','OWS','DWS'], inplace = True)
 df_player_adv['OWS'] /= df_player_adv['MP']
+
+
 
 
 
@@ -100,10 +96,58 @@ df_player_trad.fillna(0,inplace=True)
 df_player_adv.replace([np.inf,'inf'], np.nan, inplace = True)
 df_player_adv.fillna(0,inplace=True)
 
+df_player_trad.drop(columns = ['Age','G','GS','MPG','PTS','TRB','AST','STL','BLK','TOV','PF','MP'],inplace = True)
+
+df_player_adv.drop(columns = ['G','MP'], inplace = True)
+
+
+df_player_trad['FTP'] = pd.to_numeric(df_player_trad['FTP'])
+df_player_trad['ThreePP'] = pd.to_numeric(df_player_trad['ThreePP'])
+
+
+
+print(df_player_trad.columns.values)
+
+print(df_player_trad.min())
+
+print(df_player_adv.columns.values)
+print(df_player_adv.min())
 
 
 #=============================================
 #What do we drop? Where do we normalize? For logistic regression, is it not necessary to normalize?
+
+
+#============================================
+#Normalize columns
+def Normalize_and_drop(df):
+    Player_names = df['Player_name']
+    Team_ids = df['Team_id']
+    Player_ids = df['Player_id']
+    Years = df['Year']
+
+    df_nor = df.drop(columns = ['Year','Player_name','Team_id','Player_id'])
+
+    df_nor = (df_nor-df_nor.min())/(df_nor.max()-df_nor.min())
+    df_nor['Player_name'] = Player_names
+    df_nor['Team_id'] = Team_ids
+    df_nor['Player_id'] = Player_ids
+    df_nor['Year'] = Years
+
+    return df_nor
+
+df_player_adv_nor = Normalize_and_drop(df_player_adv)
+df_player_trad_nor = Normalize_and_drop(df_player_trad)
+
+print(df_player_trad_nor.head())
+print(df_player_adv_nor.head())
+
+
+
+
+
+
+
 
 
 from sklearn.linear_model import LogisticRegression
